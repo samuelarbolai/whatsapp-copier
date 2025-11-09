@@ -313,26 +313,36 @@ export default function WhatsAppMessageCopier() {
                     <p className="text-sm text-gray-500">{lead.company}</p>
                   </div>
                 </div>
-                <button
-                  onClick={() => copyToClipboard(leadIndex, 'phone', lead.phone)}
-                  className={`flex items-center gap-2 px-3 py-2 rounded-lg font-medium transition-all ${
-                    copied[`${leadIndex}_phone`]
-                      ? 'bg-green-500 text-white' 
-                      : 'bg-gray-600 hover:bg-gray-700 text-white'
-                  }`}
-                >
-                  {copied[`${leadIndex}_phone`] ? (
-                    <>
-                      <Check size={16} />
-                      <span className="text-xs">Copiado</span>
-                    </>
-                  ) : (
-                    <>
-                      <Copy size={16} />
-                      <span className="text-xs">{lead.phone}</span>
-                    </>
-                  )}
-                </button>
+                <div className="flex gap-2">
+                  <a
+                    href={`https://wa.me/${lead.phone.replace(/[^0-9]/g, '')}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2 px-3 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition-all"
+                  >
+                    <span className="text-xs">WhatsApp</span>
+                  </a>
+                  <button
+                    onClick={() => copyToClipboard(leadIndex, 'phone', lead.phone)}
+                    className={`flex items-center gap-2 px-3 py-2 rounded-lg font-medium transition-all ${
+                      copied[`${leadIndex}_phone`]
+                        ? 'bg-green-500 text-white' 
+                        : 'bg-gray-600 hover:bg-gray-700 text-white'
+                    }`}
+                  >
+                    {copied[`${leadIndex}_phone`] ? (
+                      <>
+                        <Check size={16} />
+                        <span className="text-xs">Copiado</span>
+                      </>
+                    ) : (
+                      <>
+                        <Copy size={16} />
+                        <span className="text-xs">{lead.phone}</span>
+                      </>
+                    )}
+                  </button>
+                </div>
               </div>
               
               <div className="space-y-3">
