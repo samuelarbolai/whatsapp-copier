@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Copy, Check, Upload, X, Settings } from 'lucide-react';
+import { Copy, Check, Upload, X, Settings, FileText } from 'lucide-react';
 
 const formatCompanyName = (company) => {
   if (!company || company === 'N/A') return company;
@@ -31,14 +31,25 @@ const defaultLeads = [
   { name: "Sandy", company: formatCompanyName("MindTech solutions"), phone: "+51940242832" }
 ];
 
+const defaultTemplate = `Hola [lead-name], cómo vas? hablás con Andrés. Felicitaciones por lo que estás haciendo con [company-name]
+/new-message
+Vi que te inscribiste a Fundraising School, quisiera que programaras una charla 1-1 con nuestro equipo de 30X para ver cómo te podemos ayudar a ti y a [company-name].
+/new-message
+Avisáme si te interesa y agendá con [closer-name] de mi team, sos uno de los que preseleccioné yo, entonces para guardar tu cupo rápido. Mira su calendar: 
+[calendar-link]
+/new-message
+Si no te cuadra la hora y querés reservar cupo, escribíle al [closer-phone]`;
+
 export default function WhatsAppMessageCopier() {
   const [leads, setLeads] = useState(defaultLeads);
   const [copied, setCopied] = useState({});
   const [uploadError, setUploadError] = useState('');
   const [showSettings, setShowSettings] = useState(false);
-  const [teamMember, setTeamMember] = useState('Samuel');
+  const [showTemplate, setShowTemplate] = useState(false);
+  const [closerName, setCloserName] = useState('Samuel');
   const [calendarLink, setCalendarLink] = useState('https://calendar.app.google/BSUcpKHnaUtU3csn7');
-  const [teamPhone, setTeamPhone] = useState('+57 316 824 8411');
+  const [closerPhone, setCloserPhone] = useState('+57 316 824 8411');
+  const [messageTemplate, setMessageTemplate] = useState(defaultTemplate);
 
   const parseCSV = (text) => {
     const lines = text.split('\n').filter(line => line.trim());
@@ -105,13 +116,19 @@ export default function WhatsAppMessageCopier() {
 
   const generateMessages = (name, company) => {
     const companyText = company === "N/A" ? "tu proyecto" : company;
-    return [
-      `Hola ${name}, cómo vas? hablás con Andrés. Felicitaciones por lo que estás haciendo con ${companyText}`,
-      `Vi que te inscribiste a Fundraising School, quisiera que programaras una charla 1-1 con nuestro equipo de 30X para ver cómo te podemos ayudar a ti y a ${companyText}.`,
-      `Avisáme si te interesa y agendá con ${teamMember} de mi team, sos uno de los que preseleccioné yo, entonces para guardar tu cupo rápido. Mira su calendar: 
-${calendarLink}`,
-      `Si no te cuadra la hora y querés reservar cupo, escribíle al ${teamPhone}`
-    ];
+    
+    // Split template by /new-message
+    const messageParts = messageTemplate.split('/new-message').map(m => m.trim()).filter(m => m);
+    
+    // Replace placeholders in each message
+    return messageParts.map(message => 
+      message
+        .replace(/\[lead-name\]/g, name)
+        .replace(/\[company-name\]/g, companyText)
+        .replace(/\[closer-name\]/g, closerName)
+        .replace(/\[calendar-link\]/g, calendarLink)
+        .replace(/\[closer-phone\]/g, closerPhone)
+    );
   };
 
   const copyToClipboard = async (leadIndex, messageIndex, message) => {
@@ -139,9 +156,18 @@ ${calendarLink}`,
         <div className="flex items-start justify-between mb-4">
           <div>
             <h1 className="text-3xl font-bold text-gray-800 mb-2">WhatsApp Message Copier</h1>
-            <p className="text-gray-600">{leads.length} leads - 4 messages each</p>
+            <p className="text-gray-600">{leads.length} leads - {generateMessages('Test', 'Test').length} messages each</p>
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-wrap justify-end">
+            <button
+              onClick={() => setShowTemplate(!showTemplate)}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all ${
+                showTemplate ? 'bg-green-500 text-white' : 'bg-green-500 hover:bg-green-600 text-white'
+              }`}
+            >
+              <FileText size={18} />
+              Template
+            </button>
             <button
               onClick={() => setShowSettings(!showSettings)}
               className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all ${
@@ -173,18 +199,41 @@ ${calendarLink}`,
           </div>
         </div>
         
+        {showTemplate && (
+          <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-4">
+            <h3 className="text-lg font-semibold text-gray-800 mb-3">Message Template</h3>
+            <p className="text-sm text-gray-600 mb-3">
+              Use placeholders: <code className="bg-gray-200 px-2 py-1 rounded">[lead-name]</code>, <code className="bg-gray-200 px-2 py-1 rounded">[company-name]</code>, <code className="bg-gray-200 px-2 py-1 rounded">[closer-name]</code>, <code className="bg-gray-200 px-2 py-1 rounded">[calendar-link]</code>, <code className="bg-gray-200 px-2 py-1 rounded">[closer-phone]</code>
+              <br />
+              Use <code className="bg-gray-200 px-2 py-1 rounded">/new-message</code> to separate messages
+            </p>
+            <textarea
+              value={messageTemplate}
+              onChange={(e) => setMessageTemplate(e.target.value)}
+              className="w-full h-64 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 font-mono text-sm"
+              placeholder="Enter your message template..."
+            />
+            <button
+              onClick={() => setMessageTemplate(defaultTemplate)}
+              className="mt-2 px-4 py-2 bg-gray-500 hover:bg-gray-600 text-white rounded-lg text-sm"
+            >
+              Reset to Default Template
+            </button>
+          </div>
+        )}
+        
         {showSettings && (
           <div className="bg-orange-50 border border-orange-200 rounded-lg p-4 mb-4">
-            <h3 className="text-lg font-semibold text-gray-800 mb-3">Message Settings</h3>
+            <h3 className="text-lg font-semibold text-gray-800 mb-3">Closer Settings</h3>
             <div className="space-y-3">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Team Member Name
+                  Closer Name
                 </label>
                 <input
                   type="text"
-                  value={teamMember}
-                  onChange={(e) => setTeamMember(e.target.value)}
+                  value={closerName}
+                  onChange={(e) => setCloserName(e.target.value)}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
                   placeholder="Samuel"
                 />
@@ -203,12 +252,12 @@ ${calendarLink}`,
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Team Phone Number
+                  Closer Phone Number
                 </label>
                 <input
                   type="text"
-                  value={teamPhone}
-                  onChange={(e) => setTeamPhone(e.target.value)}
+                  value={closerPhone}
+                  onChange={(e) => setCloserPhone(e.target.value)}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
                   placeholder="+57 316 824 8411"
                 />
@@ -294,7 +343,7 @@ ${calendarLink}`,
                       <div className="flex items-start justify-between gap-3">
                         <div className="flex-1">
                           <p className="text-xs font-semibold text-gray-500 mb-2">
-                            Message {msgIndex + 1}/4
+                            Message {msgIndex + 1}/{messages.length}
                           </p>
                           <pre className="text-sm text-gray-700 whitespace-pre-wrap font-sans">
                             {message}
@@ -333,14 +382,14 @@ ${calendarLink}`,
       <div className="mt-8 bg-white rounded-lg shadow-md p-6">
         <h3 className="text-lg font-semibold text-gray-800 mb-2">Instructions:</h3>
         <ul className="list-disc list-inside text-gray-600 space-y-1">
-          <li>Click "Settings" to customize team member name, calendar link, and phone number</li>
-          <li>Click "Upload CSV" to load new leads from a CSV file</li>
-          <li>CSV must have columns: "First Name", "Company Name", and "Whatsapp"</li>
-          <li>Click the phone number button to copy it, then paste in WhatsApp to start chat</li>
-          <li>Copy and send each message separately in order (1/4, 2/4, 3/4, 4/4)</li>
-          <li>Click "Copiar" on each message, paste in WhatsApp, send</li>
-          <li>Check the box once all 4 messages are sent to that lead</li>
-          <li>Click "Reset" to go back to the original 20 leads</li>
+          <li>Click "Template" to customize your message template with placeholders</li>
+          <li>Available placeholders: [lead-name], [company-name], [closer-name], [calendar-link], [closer-phone]</li>
+          <li>Use /new-message to create separate copyable messages</li>
+          <li>Click "Settings" to customize closer details</li>
+          <li>Click "Upload CSV" to load new leads</li>
+          <li>Click phone number to copy, paste in WhatsApp to start chat</li>
+          <li>Copy and send each message in order</li>
+          <li>Check the box when all messages are sent to that lead</li>
         </ul>
       </div>
     </div>
